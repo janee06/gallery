@@ -10,7 +10,7 @@ const photos = [
   { id: 2, src: '/lowpolybuilding_Bockova.jpg', category: '3D Graphics' },
   { id: 3, src: '/sandcastle.png', category: '3D Graphics' },
   { id: 4, src: '/book.jpg', category: '3D Graphics' },
-
+  { id: 17, src: '/postapocalypticpack_Bockova.jpg', category: '3D Graphics' },
   { id: 5, src: '/Bockova_auto.jpg', category: '2D Graphics' },
   { id: 6, src: '/Bockova_carbanner.jpg', category: '2D Graphics' },
   { id: 7, src: '/Bockova_koncert.jpg', category: '2D Graphics' },
