@@ -6,7 +6,7 @@ import Gallery from "./components/Galleryplspls";
 export default function Home() {
   return (
     <main>
-      <h1>Photo Gallery</h1>
+      
       <Gallery />
       <style jsx>{`
         h1 {
