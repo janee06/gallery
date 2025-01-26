@@ -10,7 +10,6 @@ import gsap from 'gsap';
 import Photo from './Photo';
 import Filter from './Filter';
 
-
 // Firebase Config
 const firebaseConfig = {
   apiKey: "AIzaSyBV8q0m6gyZn3qGIC3Pqa7U2PiZCLe6A4k",
@@ -52,7 +51,7 @@ const Gallery = () => {
   const galleryRef = useRef<HTMLDivElement>(null);
 
   // Auth State Hook
-  const [user, loading, error] = useAuthState(auth);
+  const [user, loading] = useAuthState(auth);
 
   useEffect(() => {
     if (galleryRef.current) {
