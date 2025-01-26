@@ -20,7 +20,7 @@ const firebaseConfig = {
   appId: "1:796330113885:web:b7a4e91b00b5c15f9246b4",
 };
 
-// Initialize Firebase
+
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const storage = getStorage(app);
@@ -103,7 +103,7 @@ const Gallery = () => {
 
   const handleFileUpload = async (files: FileList) => {
     const uploadPromises = Array.from(files).map(uploadFileToFirebase);
-    await Promise.all(uploadPromises); // Wait for all uploads to complete
+    await Promise.all(uploadPromises); 
   };
 
   const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
@@ -133,7 +133,7 @@ const Gallery = () => {
         <p className="mb-6 text-gray-600">Please sign in to access the gallery.</p>
         <button
           onClick={handleSignIn}
-          className="bg-blue-500 px-4 py-2 rounded text-white hover:bg-blue-700"
+          className="bg-violet-500 px-4 py-2 rounded text-white hover:bg-violet-700"
         >
           Sign In with Google
         </button>

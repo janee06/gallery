@@ -54,12 +54,12 @@ const Photo = ({ src }: { src: string }) => {
       {isModalOpen && (
         <div
           className="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-50"
-          onClick={closeModal} // Close modal on clicking outside the image
+          onClick={closeModal} 
         >
           <div
             ref={modalRef}
             className="max-w-3xl max-h-screen object-contain rounded-lg shadow-lg"
-            onClick={(e) => e.stopPropagation()} // Prevent modal close when clicking on the image
+            onClick={(e) => e.stopPropagation()} 
           >
             <img
               src={src}
