@@ -1,9 +1,30 @@
 'use client';
 
+import { initializeApp } from 'firebase/app';
+import { getAuth, GoogleAuthProvider, signInWithPopup, signOut } from 'firebase/auth';
+import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { useAuthState } from 'react-firebase-hooks/auth';
+import { v4 as uuidv4 } from 'uuid';
 import React, { useEffect, useRef, useState } from 'react';
 import gsap from 'gsap';
 import Photo from './Photo';
 import Filter from './Filter';
+
+
+// Firebase Config
+const firebaseConfig = {
+  apiKey: "AIzaSyBV8q0m6gyZn3qGIC3Pqa7U2PiZCLe6A4k",
+  authDomain: "photogallery-a82d2.firebaseapp.com",
+  projectId: "photogallery-a82d2",
+  storageBucket: "photogallery-a82d2.firebasestorage.app",
+  messagingSenderId: "796330113885",
+  appId: "1:796330113885:web:b7a4e91b00b5c15f9246b4",
+};
+
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const storage = getStorage(app);
 
 const initialPhotos = [
   { id: 1, src: '/Lights_bockova.jpg', category: '3D Graphics' },
@@ -30,9 +51,11 @@ const Gallery = () => {
   const [filter, setFilter] = useState('All');
   const galleryRef = useRef<HTMLDivElement>(null);
 
+  // Auth State Hook
+  const [user, loading, error] = useAuthState(auth);
+
   useEffect(() => {
     if (galleryRef.current) {
-      // Animate all photos into view when the component mounts or filter changes
       const items = galleryRef.current.querySelectorAll('.photo-item');
       gsap.fromTo(
         items,
@@ -42,16 +65,46 @@ const Gallery = () => {
     }
   }, [filter]);
 
-  const handleFileUpload = (files: FileList) => {
-    const uploadedPhotos = Array.from(files).map((file, index) => {
-      const imageUrl = URL.createObjectURL(file); // Convert the file to a local URL
-      return {
-        id: photos.length + index + 1, // Assign a new ID
-        src: imageUrl,
-        category: 'Uploaded', // Mark as uploaded
-      };
-    });
-    setPhotos([...photos, ...uploadedPhotos]);
+  const handleSignIn = async () => {
+    const provider = new GoogleAuthProvider();
+    try {
+      await signInWithPopup(auth, provider);
+    } catch (error) {
+      console.error('Error during sign-in:', error);
+    }
+  };
+
+  const handleSignOut = async () => {
+    try {
+      await signOut(auth);
+    } catch (error) {
+      console.error('Error during sign-out:', error);
+    }
+  };
+
+  const uploadFileToFirebase = async (file: File) => {
+    const fileName = `${uuidv4()}-${file.name}`;
+    const storageRef = ref(storage, `photos/${fileName}`);
+    try {
+      // Upload the file to Firebase Storage
+      const snapshot = await uploadBytes(storageRef, file);
+
+      // Get the download URL
+      const downloadURL = await getDownloadURL(snapshot.ref);
+
+      // Add the photo to the gallery
+      setPhotos((prevPhotos) => [
+        ...prevPhotos,
+        { id: prevPhotos.length + 1, src: downloadURL, category: 'Uploaded' },
+      ]);
+    } catch (error) {
+      console.error('Error uploading file:', error);
+    }
+  };
+
+  const handleFileUpload = async (files: FileList) => {
+    const uploadPromises = Array.from(files).map(uploadFileToFirebase);
+    await Promise.all(uploadPromises); // Wait for all uploads to complete
   };
 
   const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
@@ -62,36 +115,59 @@ const Gallery = () => {
 
   const handleBrowse = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
-    if (files) {
-      handleFileUpload(files);
-    }
+    if (files) handleFileUpload(files);
   };
 
-  
-  const categories = [
-    'All',
-    ...new Set(photos.map(photo => photo.category)), // Get unique categories
-  ];
+  const categories = ['All', ...new Set(photos.map((photo) => photo.category))];
 
   const filteredPhotos =
-    filter === 'All' ? photos : photos.filter(photo => photo.category === filter);
+    filter === 'All' ? photos : photos.filter((photo) => photo.category === filter);
+
+  if (loading) {
+    return <div className="text-center p-6">Loading...</div>;
+  }
+
+  if (!user) {
+    return (
+      <div className="flex flex-col items-center justify-center h-screen">
+        <h1 className="text-4xl font-bold text-center mb-4 text-black">Sign In Required</h1>
+        <p className="mb-6 text-gray-600">Please sign in to access the gallery.</p>
+        <button
+          onClick={handleSignIn}
+          className="bg-blue-500 px-4 py-2 rounded text-white hover:bg-blue-700"
+        >
+          Sign In with Google
+        </button>
+      </div>
+    );
+  }
 
   return (
-    <div className="container mx-auto p-6">
-      <h1 className="text-4xl font-bold text-center mb-8 text-gray-800">Photo Gallery</h1>
-
-      <Filter
-        categories={categories} // Dynamically populated categories
-        setFilter={setFilter}
-      />
-
+    <div className="container mx-auto p-6 relative">
+      {/* Top Right User Info */}
+      <div className="absolute top-6 right-6 flex items-center space-x-4">
+        <p className="text-gray-800">Welcome, {user.displayName}</p>
+        <button
+          onClick={handleSignOut}
+          className="bg-red-500 px-3 py-2 rounded text-white hover:bg-red-700"
+        >
+          Sign Out
+        </button>
+      </div>
+  
+      {/* Page Title */}
+      <h1 className="text-4xl font-bold text-center mb-8 text-black">Photo Gallery</h1>
+  
+      {/* Filter Section */}
+      <Filter categories={categories} setFilter={setFilter} />
+  
       {/* Drag and Drop Area */}
       <div
         className="border-2 border-dashed border-gray-400 rounded-lg p-8 mb-6 flex justify-center items-center flex-col"
         onDrop={handleDrop}
-        onDragOver={(e) => e.preventDefault()} // Prevent default to allow dropping
+        onDragOver={(e) => e.preventDefault()}
       >
-        <p className="text-gray-500 text-lg mb-4">
+        <p className="text-gray-700 text-lg mb-4">
           Drag and drop images here, or click to upload.
         </p>
         <input
@@ -104,18 +180,18 @@ const Gallery = () => {
         />
         <label
           htmlFor="fileInput"
-          className="cursor-pointer bg-blue-500 text-white py-2 px-4 rounded-lg hover:bg-blue-600 transition"
+          className="cursor-pointer bg-violet-400 text-white py-2 px-4 rounded-lg hover:bg-violet-600 transition"
         >
           Choose Images
         </label>
       </div>
-
+  
       {/* Gallery Grid */}
       <div
         ref={galleryRef}
         className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 mt-6"
       >
-        {filteredPhotos.map(photo => (
+        {filteredPhotos.map((photo) => (
           <Photo key={photo.id} src={photo.src} />
         ))}
       </div>
