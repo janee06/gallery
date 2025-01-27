@@ -5,7 +5,6 @@ import { v4 as uuidv4 } from 'uuid';
 import { initializeApp } from 'firebase/app';
 import { getAuth, GoogleAuthProvider, signInWithPopup, signOut } from 'firebase/auth';
 import { useAuthState } from 'react-firebase-hooks/auth';
-import gsap from 'gsap';
 import Photo from './Photo';
 import Filter from './Filter';
 
