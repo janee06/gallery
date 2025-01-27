@@ -3,7 +3,12 @@
 import { useState, useRef, useEffect } from 'react';
 import gsap from 'gsap';
 
-const Photo = ({ src }: { src: string }) => {
+type PhotoProps = {
+  src: string;
+  onDelete: () => void; // Receive onDelete as a prop for deleting images
+};
+
+const Photo = ({ src, onDelete }: PhotoProps) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const modalRef = useRef<HTMLDivElement>(null);
 
@@ -48,6 +53,14 @@ const Photo = ({ src }: { src: string }) => {
         <div className="absolute inset-0 bg-black bg-opacity-30 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-lg flex items-center justify-center">
           <p className="text-white text-lg font-semibold">View Image</p>
         </div>
+
+        {/* Delete Button (positioned correctly) */}
+        <button
+          onClick={onDelete}
+          className="absolute top-2 right-2 bg-red-500 text-white p-2 rounded-full hover:bg-red-700"
+        >
+          Delete
+        </button>
       </div>
 
       {/* Modal for Fullscreen Image */}
