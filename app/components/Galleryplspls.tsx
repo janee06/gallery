@@ -2,9 +2,7 @@
 
 import { initializeApp } from 'firebase/app';
 import { getAuth, GoogleAuthProvider, signInWithPopup, signOut } from 'firebase/auth';
-import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { useAuthState } from 'react-firebase-hooks/auth';
-import { v4 as uuidv4 } from 'uuid';
 import React, { useEffect, useRef, useState } from 'react';
 import gsap from 'gsap';
 import Photo from './Photo';
@@ -22,13 +20,12 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
-const storage = getStorage(app);
 
 const LOCAL_STORAGE_KEY = 'photoGallery';
 
 interface Photo {
   id: number;
-  src: string; // Ensure src is always a string
+  src: string;
   category: string;
 }
 
