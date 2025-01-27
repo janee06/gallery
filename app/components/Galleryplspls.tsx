@@ -20,12 +20,19 @@ const firebaseConfig = {
   appId: "1:796330113885:web:b7a4e91b00b5c15f9246b4",
 };
 
-
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const storage = getStorage(app);
 
-const initialPhotos = [
+const LOCAL_STORAGE_KEY = 'photoGallery';
+
+interface Photo {
+  id: number;
+  src: string; // Ensure src is always a string
+  category: string;
+}
+
+const initialPhotos: Photo[] = [
   { id: 1, src: '/Lights_bockova.jpg', category: '3D Graphics' },
   { id: 2, src: '/lowpolybuilding_Bockova.jpg', category: '3D Graphics' },
   { id: 3, src: '/sandcastle.png', category: '3D Graphics' },
@@ -46,12 +53,18 @@ const initialPhotos = [
 ];
 
 const Gallery = () => {
-  const [photos, setPhotos] = useState(initialPhotos);
+  const [photos, setPhotos] = useState<Photo[]>(() => {
+    const savedPhotos = localStorage.getItem(LOCAL_STORAGE_KEY);
+    return savedPhotos ? JSON.parse(savedPhotos) : initialPhotos;
+  });
   const [filter, setFilter] = useState('All');
   const galleryRef = useRef<HTMLDivElement>(null);
 
-  // Auth State Hook
   const [user, loading] = useAuthState(auth);
+
+  useEffect(() => {
+    localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(photos));
+  }, [photos]);
 
   useEffect(() => {
     if (galleryRef.current) {
@@ -81,29 +94,30 @@ const Gallery = () => {
     }
   };
 
-  const uploadFileToFirebase = async (file: File) => {
-    const fileName = `${uuidv4()}-${file.name}`;
-    const storageRef = ref(storage, `photos/${fileName}`);
-    try {
-      // Upload the file to Firebase Storage
-      const snapshot = await uploadBytes(storageRef, file);
-
-      // Get the download URL
-      const downloadURL = await getDownloadURL(snapshot.ref);
-
-      // Add the photo to the gallery
-      setPhotos((prevPhotos) => [
-        ...prevPhotos,
-        { id: prevPhotos.length + 1, src: downloadURL, category: 'Uploaded' },
-      ]);
-    } catch (error) {
-      console.error('Error uploading file:', error);
-    }
-  };
-
+  // New handleFileUpload function
   const handleFileUpload = async (files: FileList) => {
-    const uploadPromises = Array.from(files).map(uploadFileToFirebase);
-    await Promise.all(uploadPromises); 
+    const fileReaders = Array.from(files).map((file) => {
+      return new Promise<Photo>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => {
+          // Ensure reader.result is a string
+          if (typeof reader.result === 'string') {
+            resolve({ id: Date.now(), src: reader.result, category: 'Uploaded' });
+          } else {
+            reject(new Error('Invalid file type: reader.result is not a string'));
+          }
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(file); // Convert the file to Base64 string
+      });
+    });
+
+    try {
+      const newPhotos = await Promise.all(fileReaders);
+      setPhotos((prevPhotos) => [...prevPhotos, ...newPhotos]);
+    } catch (error) {
+      console.error('Error reading files:', error);
+    }
   };
 
   const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
@@ -143,7 +157,6 @@ const Gallery = () => {
 
   return (
     <div className="container mx-auto p-6 relative">
-      {/* Top Right User Info */}
       <div className="absolute top-6 right-6 flex items-center space-x-4">
         <p className="text-gray-800">Welcome, {user.displayName}</p>
         <button
@@ -153,14 +166,11 @@ const Gallery = () => {
           Sign Out
         </button>
       </div>
-  
-      {/* Page Title */}
+
       <h1 className="text-4xl font-bold text-center mb-8 text-black">Photo Gallery</h1>
-  
-      {/* Filter Section */}
+
       <Filter categories={categories} setFilter={setFilter} />
-  
-      {/* Drag and Drop Area */}
+
       <div
         className="border-2 border-dashed border-gray-400 rounded-lg p-8 mb-6 flex justify-center items-center flex-col"
         onDrop={handleDrop}
@@ -184,8 +194,7 @@ const Gallery = () => {
           Choose Images
         </label>
       </div>
-  
-      {/* Gallery Grid */}
+
       <div
         ref={galleryRef}
         className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 mt-6"
