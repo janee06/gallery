@@ -49,25 +49,28 @@ const initialPhotos: PhotoType[] = [
 ];
 
 const Gallery = () => {
-  const [photos, setPhotos] = useState<PhotoType[]>(initialPhotos);
+  const [photos, setPhotos] = useState<PhotoType[]>([]);
   const [filter, setFilter] = useState('All');
   const [user, loading] = useAuthState(auth);
   const galleryRef = useRef<HTMLDivElement>(null);
 
   // Delete photo by id
   const deletePhoto = (id: string) => {
-    setPhotos((prevPhotos) => prevPhotos.filter((photo) => photo.id !== id));
+    setPhotos((prevPhotos) => {
+      const updatedPhotos = prevPhotos.filter((photo) => photo.id !== id);
+      localStorage.setItem('uploadedPhotos', JSON.stringify(updatedPhotos)); // Persist to localStorage
+      return updatedPhotos;
+    });
   };
 
   // Load persisted images from localStorage
   useEffect(() => {
     const savedPhotos = localStorage.getItem('uploadedPhotos');
     if (savedPhotos) {
-      const parsedPhotos: PhotoType[] = JSON.parse(savedPhotos).map((photo: { src: string; category: string }) => ({
-        ...photo,
-        id: uuidv4(), // Ensure id is unique for each photo
-      }));
-      setPhotos([...initialPhotos, ...parsedPhotos]);
+      const parsedPhotos: PhotoType[] = JSON.parse(savedPhotos);
+      setPhotos(parsedPhotos); // Only load saved photos
+    } else {
+      setPhotos(initialPhotos); // If no saved photos, load initial ones
     }
   }, []);
 
@@ -104,9 +107,19 @@ const Gallery = () => {
       });
     });
 
-    // After photos are uploaded, update state
+    // After photos are uploaded, update state and persist them
     Promise.all(uploadedPhotos).then((newPhotos) => {
-      setPhotos((prevPhotos) => [...prevPhotos, ...newPhotos]);
+      setPhotos((prevPhotos) => {
+        // Remove duplicates (based on `src`) from the state before adding the new ones
+        const filteredNewPhotos = newPhotos.filter(
+          (newPhoto) => !prevPhotos.some((existingPhoto) => existingPhoto.src === newPhoto.src)
+        );
+
+        // Combine current photos with new ones (after filtering out duplicates)
+        const updatedPhotos = [...prevPhotos, ...filteredNewPhotos];
+        localStorage.setItem('uploadedPhotos', JSON.stringify(updatedPhotos)); // Persist to localStorage
+        return updatedPhotos;
+      });
     });
   };
 
