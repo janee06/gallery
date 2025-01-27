@@ -173,7 +173,7 @@ const Gallery = () => {
         />
         <label
           htmlFor="fileInput"
-          className="cursor-pointer bg-blue-500 text-white py-2 px-4 rounded-lg hover:bg-blue-600 transition"
+          className="cursor-pointer bg-violet-400 text-white py-2 px-4 rounded-lg hover:bg-violet-500 transition"
         >
           Choose Images
         </label>
