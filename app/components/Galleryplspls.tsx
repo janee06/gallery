@@ -63,7 +63,7 @@ const Gallery = () => {
   useEffect(() => {
     const savedPhotos = localStorage.getItem('uploadedPhotos');
     if (savedPhotos) {
-      const parsedPhotos = JSON.parse(savedPhotos).map((photo: any) => ({
+      const parsedPhotos: PhotoType[] = JSON.parse(savedPhotos).map((photo: { src: string; category: string }) => ({
         ...photo,
         id: uuidv4(), // Ensure id is unique for each photo
       }));
@@ -93,11 +93,11 @@ const Gallery = () => {
     const uploadedPhotos: Promise<PhotoType>[] = Array.from(files).map((file) => {
       const reader = new FileReader();
       reader.readAsDataURL(file);
-      return new Promise((resolve) => {
+      return new Promise<PhotoType>((resolve) => {
         reader.onload = () => {
           resolve({
             id: uuidv4(), // Generate unique id
-            src: reader.result as string,
+            src: reader.result as string, // Explicitly type reader.result as string
             category: 'Uploaded',
           });
         };
